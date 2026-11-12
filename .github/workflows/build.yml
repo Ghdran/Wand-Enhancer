@@ -1,0 +1,46 @@
+name: Build executable
+
+on:
+  workflow_dispatch:
+    inputs:
+      enable_updates:
+        description: 'Include GitHub release checks when Wand starts'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Build WandEnhancer
+        shell: cmd
+        run: |
+          if "${{ github.event.inputs.enable_updates }}"=="true" (
+            build.cmd -EnableUpdateNotifications
+          ) else (
+            build.cmd
+          )
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: WandEnhancer
+          path: |
+            **/Release/WandEnhancer.exe
+            **/bin/Release/**/WandEnhancer.exe
+          if-no-files-found: error
